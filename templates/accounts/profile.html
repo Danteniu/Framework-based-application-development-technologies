@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Профиль — СистемаКонтроля{% endblock %}
+{% block content %}
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h1 class="h4 mb-2">Профиль</h1>
+      <div><strong>Пользователь:</strong> {{ user.username }}</div>
+      <div><strong>Роль:</strong> {{ user.get_role_display }}</div>
+      <div class="mt-3">
+        <a class="btn btn-outline-secondary" href="{% url 'defects:list' %}">К дефектам</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

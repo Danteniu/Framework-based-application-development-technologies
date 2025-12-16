@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Дефект #{{ defect.id }} — СистемаКонтроля{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h1 class="h4 m-0">Дефект #{{ defect.id }} — {{ defect.title }}</h1>
+      <div class="text-muted mt-1">
+        Объект: <strong>{{ defect.project.name }}</strong>
+        {% if defect.stage %} · Этап: <strong>{{ defect.stage.name }}</strong>{% endif %}
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {% if can_edit %}
+        <a class="btn btn-outline-secondary" href="{% url 'defects:edit' defect.id %}">Редактировать</a>
+      {% endif %}
+      <a class="btn btn-outline-secondary" href="{% url 'defects:list' %}">Назад</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4"><div class="text-muted">Статус</div><div class="fw-semibold">{{ defect.get_status_display }}</div></div>
+            <div class="col-md-4"><div class="text-muted">Приоритет</div><div class="fw-semibold">{{ defect.get_priority_display }}</div></div>
+            <div class="col-md-4"><div class="text-muted">Срок</div>
+              <div class="fw-semibold">{% if defect.due_date %}{{ defect.due_date }}{% else %}—{% endif %}</div>
+            </div>
+          </div>
+          <hr/>
+          <div class="text-muted">Описание</div>
+          <div style="white-space: pre-wrap;">{{ defect.description }}</div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6">Комментарии</h2>
+          {% for c in defect.comments.all %}
+            <div class="border rounded p-2 mb-2 bg-white">
+              <div class="small text-muted">{{ c.author.username }} · {{ c.created_at|date:"Y-m-d H:i" }}</div>
+              <div style="white-space: pre-wrap;">{{ c.body }}</div>
+            </div>
+          {% empty %}
+            <div class="text-muted">Комментариев пока нет.</div>
+          {% endfor %}
+
+          {% if can_comment %}
+            <form method="post" action="{% url 'defects:comment' defect.id %}">
+              {% csrf_token %}
+              {{ comment_form.as_p }}
+              <button class="btn btn-sm btn-primary" type="submit">Добавить комментарий</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6">Исполнитель</h2>
+          <div>{% if defect.assignee %}{{ defect.assignee.username }}{% else %}<span class="text-muted">не назначен</span>{% endif %}</div>
+          <div class="small text-muted mt-2">Автор: {{ defect.created_by.username }} · {{ defect.created_at|date:"Y-m-d H:i" }}</div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6">Вложения</h2>
+          <ul class="list-unstyled mb-2">
+            {% for a in defect.attachments.all %}
+              <li class="mb-1">
+                <a href="{{ a.file.url }}">{{ a.file.name|cut:"defects/" }}</a>
+                <span class="small text-muted">· {{ a.created_at|date:"Y-m-d H:i" }}</span>
+              </li>
+            {% empty %}
+              <li class="text-muted">Нет вложений.</li>
+            {% endfor %}
+          </ul>
+          {% if can_attach %}
+            <form method="post" enctype="multipart/form-data" action="{% url 'defects:attach' defect.id %}">
+              {% csrf_token %}
+              {{ attachment_form.as_p }}
+              <button class="btn btn-sm btn-outline-primary" type="submit">Загрузить</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6">Смена статуса</h2>
+          <div class="small text-muted mb-2">
+            Доступные переходы: {% if allowed_next_labels %}{{ allowed_next_labels|join:", " }}{% else %}нет{% endif %}
+          </div>
+          {% if can_change_status %}
+            <form method="post" action="{% url 'defects:status' defect.id %}">
+              {% csrf_token %}
+              {{ status_form.as_p }}
+              <button class="btn btn-sm btn-primary" type="submit">Обновить статус</button>
+            </form>
+          {% else %}
+            <div class="text-muted">Только просмотр.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="h6">История</h2>
+          <ul class="list-unstyled m-0">
+            {% for h in defect.history.all %}
+              <li class="mb-2">
+                <div class="small text-muted">{{ h.created_at|date:"Y-m-d H:i" }}{% if h.actor %} · {{ h.actor.username }}{% endif %}</div>
+                <div>{{ h.action }}{% if h.from_status and h.to_status %}: {{ h.get_from_status_display }} → {{ h.get_to_status_display }}{% endif %}</div>
+              </li>
+            {% empty %}
+              <li class="text-muted">Истории пока нет.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

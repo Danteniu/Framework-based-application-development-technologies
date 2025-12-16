@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Дефекты — СистемаКонтроля{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 m-0">Дефекты</h1>
+    {% if user.is_authenticated and user.role != "observer" %}
+      <a class="btn btn-primary" href="{% url 'defects:create' %}">Создать дефект</a>
+    {% endif %}
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <form class="row g-2" method="get">
+        <div class="col-md-4">
+          <input class="form-control" type="text" name="q" value="{{ filters.q }}" placeholder="Поиск по заголовку/описанию">
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="sort">
+            <option value="-created_at" {% if filters.sort == "-created_at" %}selected{% endif %}>Сначала новые</option>
+            <option value="created_at" {% if filters.sort == "created_at" %}selected{% endif %}>Сначала старые</option>
+            <option value="due_date" {% if filters.sort == "due_date" %}selected{% endif %}>Срок: ближе</option>
+            <option value="-due_date" {% if filters.sort == "-due_date" %}selected{% endif %}>Срок: дальше</option>
+            <option value="priority" {% if filters.sort == "priority" %}selected{% endif %}>Приоритет: по возр.</option>
+            <option value="-priority" {% if filters.sort == "-priority" %}selected{% endif %}>Приоритет: по убыв.</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="status">
+            <option value="">Статус: все</option>
+            {% for v,l in status_choices %}
+              <option value="{{ v }}" {% if filters.status == v %}selected{% endif %}>{{ l }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="priority">
+            <option value="">Приоритет: все</option>
+            {% for v,l in priority_choices %}
+              <option value="{{ v }}" {% if filters.priority == v %}selected{% endif %}>{{ l }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="project">
+            <option value="">Объект: все</option>
+            {% for p in projects %}
+              <option value="{{ p.id }}" {% if filters.project|add:"" == p.id|add:"" %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-1 d-grid">
+          <button class="btn btn-outline-primary" type="submit">ОК</button>
+        </div>
+      </form>
+      <div class="mt-2">
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:export_csv' %}{% if filters_qs %}?{{ filters_qs }}{% endif %}">Экспорт CSV</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:export_xlsx' %}{% if filters_qs %}?{{ filters_qs }}{% endif %}">Экспорт Excel</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover m-0 align-middle">
+        <thead>
+          <tr>
+            <th style="width:90px;">ID</th>
+            <th>Заголовок</th>
+            <th>Объект</th>
+            <th>Этап</th>
+            <th>Статус</th>
+            <th>Приоритет</th>
+            <th>Исполнитель</th>
+            <th>Срок</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in defects %}
+            <tr>
+              <td>#{{ d.id }}</td>
+              <td><a href="{% url 'defects:detail' d.id %}">{{ d.title }}</a></td>
+              <td>{{ d.project.name }}</td>
+              <td>{% if d.stage %}{{ d.stage.name }}{% endif %}</td>
+              <td>{{ d.get_status_display }}</td>
+              <td>{{ d.get_priority_display }}</td>
+              <td>{% if d.assignee %}{{ d.assignee.username }}{% endif %}</td>
+              <td>
+                {% if d.due_date %}
+                  <span class="{% if d.is_overdue %}text-danger fw-semibold{% endif %}">{{ d.due_date }}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="text-muted">Пока нет дефектов.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if page_obj %}
+    <nav class="mt-3" aria-label="Пагинация">
+      <ul class="pagination">
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+          {% if page_obj.has_previous %}
+            <a class="page-link" href="?{% if filters_qs %}{{ filters_qs }}&{% endif %}page={{ page_obj.previous_page_number }}">Назад</a>
+          {% else %}
+            <span class="page-link">Назад</span>
+          {% endif %}
+        </li>
+        <li class="page-item disabled">
+          <span class="page-link">Стр. {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+          {% if page_obj.has_next %}
+            <a class="page-link" href="?{% if filters_qs %}{{ filters_qs }}&{% endif %}page={{ page_obj.next_page_number }}">Вперёд</a>
+          {% else %}
+            <span class="page-link">Вперёд</span>
+          {% endif %}
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+{% endblock %}
+
+

@@ -1,0 +1,23 @@
+:root {
+  --sk-card-radius: 14px;
+}
+
+.card {
+  border-radius: var(--sk-card-radius);
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+/* Slightly nicer form spacing for {{ form.as_p }} */
+form p {
+  margin-bottom: 0.75rem;
+}
+
+form label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+
